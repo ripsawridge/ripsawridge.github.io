@@ -48,7 +48,7 @@ than code. But the V8 <span class="caps">IC</span> system is rich, complex and p
 sensitive. Becuase of that introducing data structures for feedback has been
 slow. A year ago I began using the “type feedback vector” to record data for
 calls from one JavaScript function to another. Now I’m working on making loads
-(like <code>x = obj.foo</code> and keyed loads like <code>x = obj[h]</code> use the type
+(like <code>x = obj.foo</code> and keyed loads like <code>x = obj[h]</code>) use the type
 feedback vector, and avoid patching code&nbsp;completely.</p>
 <p>It’s difficult because a data structure solution means more memory loads no
 matter how you slice it. Here we come to another potential beneft of a type
