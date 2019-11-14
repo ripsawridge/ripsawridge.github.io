@@ -7,7 +7,7 @@
     <title>Poking around in Speedometer - fork()
     </title>
     <link rel="alternate" href="http://ripsawridge.github.io//feed.xml" type="application/rss+xml" title="Notes from my endeavors">
-    <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic|Anonymous+Pro:400,700,400italic,700italic|Merriweather:400,700,300">
+    <link rel="stylesheet" href="//fonts.googleapis.com/css?family=Lora:400,700,400italic,700italic|Anonymous+Pro:400,700,400italic,700italic|Merriweather:400,700,300">
     <link rel="stylesheet" href="/css/main.css">
   </head>
   <body class="article-detail">
@@ -21,30 +21,27 @@
     <div id="content">
       <div class="content-wrap">
         <article class="article">
-          <section class="content"><p>My marching orders today&nbsp;were:</p>
+          <section class="content"><p>My marching orders today<span class="widont">&nbsp;</span>were:</p>
 <pre><code>OPPORTUNITIES FOR SMALL IMPROVEMENT IN JQUERY SPEEDOMETER BNCHMRK. STOP.
-WHY CALLS TO RUNTIME KEYED LOAD? WHY CALLS TO HANDLEAPICALL? WHY? STOP.
-</code></pre><p>These days I’m a manager type, more comfortable droning on in sonorous tones
+WHY CALLS TO RUNTIME KEYED LOAD? WHY CALLS TO HANDLEAPICALL? WHY? STOP.</code></pre><p>These days I’m a manager type, more comfortable droning on in sonorous tones
 with made up words like “leveraging” and “embiggen,” but p’raps I can saddle
-up and look at the code&nbsp;again.</p>
+up and look at the code<span class="widont">&nbsp;</span>again.</p>
 <hr>
 <p>First! To use Jaro’s new ProfView tool! (<code>v8/tools/profview/index.html</code>).
 Hilariously, I was poking around in /tools and found <code>profviz</code>, an apparently
 abandoned tool that Jaro didn’t even know about. “As a manager, I encourage you
-to leverage existing resources for maximum&nbsp;effect.”</p>
-<p>He just stared at&nbsp;me.</p>
-<p>Okay! Back to work. First I run the Speedometer jQuery benchmark in chrome like&nbsp;this:</p>
-<pre><code>out/Release/chrome --no-sandbox --js-flags=&quot;--prof&quot;
-</code></pre><p>I have to use <code>--no-sandbox</code> so that an <code>isolate-v8.log</code> file can be written to disk.
-And <code>--js-flags</code> is the place to pass V8&nbsp;options.</p>
+to leverage existing resources for maximum<span class="widont">&nbsp;</span>effect.”</p>
+<p>He just stared at<span class="widont">&nbsp;</span>me.</p>
+<p>Okay! Back to work. First I run the Speedometer jQuery benchmark in chrome like<span class="widont">&nbsp;</span>this:</p>
+<pre><code>out/Release/chrome --no-sandbox --js-flags=&quot;--prof&quot;</code></pre><p>I have to use <code>--no-sandbox</code> so that an <code>isolate-v8.log</code> file can be written to disk.
+And <code>--js-flags</code> is the place to pass V8<span class="widont">&nbsp;</span>options.</p>
 <center><a href="images/interactiverunnger.jpg"><img src="images/interactiverunner.jpg" width=600></a></center>
 
 <p>I ran the test three times, shut Chrome down, then process the log file.
 Oh jeez, there are four of them. Sigh. I’ll try the first one. Running in the
-chrome&nbsp;directory:</p>
+chrome<span class="widont">&nbsp;</span>directory:</p>
 <pre><code>v8/tools/linux-tick-processor --preprocess isolate-0x20c3d10ee000-v8.log &gt;
-    mystery.json
-</code></pre><p>I load that file up in ProfView, and see the&nbsp;following:</p>
+    mystery.json</code></pre><p>I load that file up in ProfView, and see the<span class="widont">&nbsp;</span>following:</p>
 <center><a href="images/profview1.jpg"><img src="images/profview1.jpg" width=600></a></center>
 
 <p>The first issue is from the function <code>cleanData</code>, where a keyed load ends up in
@@ -52,9 +49,8 @@ the runtime both from an unoptimized version of <code>cleanData</code> and an op
 version. Wha? Can’t we do better? Adding insult to injury,
 <code>Runtime_KeyedGetProperty</code> calls Blink’s <code>indexedPropertyGetterCallback</code>.</p>
 <pre><code>HEADQRTRS THOUGHT WE HAD A FAST PATH FOR THAT.
-STOP.
-</code></pre><p>Here is the&nbsp;code:</p>
-<pre><code class="lang-javascript">cleanData: <span class="function"><span class="keyword">function</span><span class="params">( elems, <span class="comment">/* internal */</span> acceptData )</span> {</span>
+STOP.</code></pre><p>Here is the<span class="widont">&nbsp;</span>code:</p>
+<pre><code class="language-javascript">cleanData: <span class="function"><span class="keyword">function</span>(<span class="params"> elems, <span class="regexp">/* internal */</span> acceptData </span>) </span>{
   <span class="keyword">var</span> elem, type, id, data, i = <span class="number">0</span>,
     internalKey = jQuery.expando,
     cache = jQuery.cache,
@@ -68,18 +64,17 @@ STOP.
       data = id &amp;&amp; cache[ id ];
       <span class="keyword">if</span> ( data ) {
         <span class="keyword">if</span> ( data.events ) {
-           ...
-</code></pre>
+           ...</code></pre>
 <p>Well, I see at least 3 keyed loads in the code above, and there are even more below.
 Hmm, ProfView can’t tell me <em>which</em> keyed load is the expensive one. I’ll use Chrome
-Developer Tools to take a snapshot of a run to try and get more&nbsp;hints…</p>
+Developer Tools to take a snapshot of a run to try and get more<span class="widont">&nbsp;</span>hints…</p>
 <center><a href="images/devtools1.jpg"><img src="images/devtools1.jpg" width=600></a></center>
 
 <p>The line <code>data = id &amp;&amp; cache[ id ]</code> gets most of the ticks. It’s reasonable to conclude
-this is the heaviest load. In fact though, it’s the&nbsp;lightest.</p>
+this is the heaviest load. In fact though, it’s the<span class="widont">&nbsp;</span>lightest.</p>
 <p>Time to visit my old friend, <code>--trace-ic</code> and watch what happens to this keyed load ic.
 Things have changed in the old neighborhood…the output no longer goes to the console, but
-the log file.&nbsp;M’okay.</p>
+the log file.<span class="widont">&nbsp;</span>M’okay.</p>
 <pre><code>v8/tools/ic-processor isolate-0x5acebee7000-v8.log &gt; mystery-ic.txt
 
 $ cat mystery-ic.txt | grep KeyedLoadIC | grep cleanData
@@ -102,17 +97,15 @@ KeyedLoadIC (N-&gt;N) at cleanData ../jquery.js:6576:16 jQuery191014824181949153
 KeyedLoadIC (N-&gt;N) at cleanData ../jquery.js:6576:16 jQuery19101482418194915336 (map 0x20d03abd0281)
 KeyedLoadIC (N-&gt;N) at cleanData ../jquery.js:6576:16 jQuery19101482418194915336 (map 0x20d03abcffc1)
 KeyedLoadIC (N-&gt;N) at cleanData ../jquery.js:6576:16 jQuery19101482418194915336 (map 0x20d03abb5529)
-...
-</code></pre><p>Hmm. It’s sad to see that for loop with <code>elem = elems[i]</code> go generic. That’s weird. I also notice that
+...</code></pre><p>Hmm. It’s sad to see that for loop with <code>elem = elems[i]</code> go generic. That’s weird. I also notice that
 I can’t tell from this log output if the <span class="caps">IC</span> is in the optimized version of cleanData or the unoptimized
 version. The old trace-ic logs used to display this.
-<a href="https://codereview.chromium.org/2835923004/">I’ll just take care of that now, yallz</a>.</p>
+<a href="https://codereview.chromium.org/2835923004/">I’ll just take care of that now,<span class="widont">&nbsp;</span>yallz</a>.</p>
 <p>Turning away from <span class="caps">IC</span> tracing for a moment, let’s look at the optimized code for <code>cleanData</code>.</p>
-<pre><code>out/Release/chrome --no-sandbox --js-flags=&quot;--trace-opt-code --trace-opt&quot; &gt; code.txt
-</code></pre><p>Now I can look at the optimized code for <code>cleanData</code> and see when keyed load ICs are used.
+<pre><code>out/Release/chrome --no-sandbox --js-flags=&quot;--trace-opt-code --trace-opt&quot; &gt; code.txt</code></pre><p>Now I can look at the optimized code for <code>cleanData</code> and see when keyed load ICs are used.
 At the risk (certainty!) of overbroad generalization, if we use an <span class="caps">IC</span> in optimized code it
 <em>means we’ve given up trying to optimize it</em>. The code is
-“generic” from our point of view. Hopefully we can do better from this&nbsp;point.</p>
+“generic” from our point of view. Hopefully we can do better from this<span class="widont">&nbsp;</span>point.</p>
 <pre><code>    -- B4 start (loop up to 160) --
 0x2e72378a7380   120  488b4dd8       REX.W movq rcx,[rbp-0x28]
 0x2e72378a7384   124  48c1e120       REX.W shlq rcx, 32
@@ -122,12 +115,11 @@ At the risk (certainty!) of overbroad generalization, if we use an <span class="
 0x2e72378a7390   130  48b8000000000e000000 REX.W movq rax,0xe00000000
 0x2e72378a739a   13a  4c8bc0         REX.W movq r8,rax
 0x2e72378a739d   13d  e89e8ef2ff     call 0x2e72377d0240  (KeyedLoadICTrampoline)
-    ;; code: KEYED_LOAD_IC
-</code></pre><p>Yuck, this is the for loop with <code>elem = elems[i]</code>. So sad that we are generic! I really want to know why.
+    ;; code: KEYED_LOAD_IC</code></pre><p>Yuck, this is the for loop with <code>elem = elems[i]</code>. So sad that we are generic! I really want to know why.
 I ran chrome with the debugger, first adjusting <code>gn args out/Debug</code> to include the key
 <code>v8_optimized_debug = false</code> so I could inspect variables. I found the place in the <span class="caps">IC</span> system where we
-update the IC state, using printf-style debugging to stop at the right&nbsp;place:</p>
-<pre><code class="lang-cpp">
+update the <span class="caps">IC</span> state, using printf-style debugging to stop at the right<span class="widont">&nbsp;</span>place:</p>
+<pre><code class="language-cpp">
 <span class="comment">// in src/ic/ic.cc:</span>
 
 <span class="keyword">void</span> KeyedLoadIC::UpdateLoadElement(Handle&lt;HeapObject&gt; receiver) {
@@ -140,10 +132,9 @@ update the IC state, using printf-style debugging to stop at the right&nbsp;plac
   ...
 </code></pre>
 <p><a href="https://chromium.googlesource.com/chromium/src/+/lkgr/docs/linux_debugging.md">Debugging Chrome</a>
-can be tricky, here is the command line I&nbsp;used:</p>
+can be tricky, here is the command line I<span class="widont">&nbsp;</span>used:</p>
 <pre><code>gdb --args out/Debug/chrome --disable-gpu --single-process --no-sandbox
-    http://browserbench.org/Speedometer/InteractiveRunner.html
-</code></pre><p>Setting a breakpoint on the <code>PrintF</code> statement, I first hit it when we went monomorphic.
+    http://browserbench.org/Speedometer/InteractiveRunner.html</code></pre><p>Setting a breakpoint on the <code>PrintF</code> statement, I first hit it when we went monomorphic.
 Then we come in with a new map and stay monomorphic. On the third hit we go generic with
 the message <code>same map added twice.</code> I could inspect the receiver and the feedback vector
 with our friendly debugger helpers (available in <code>v8/tools/gdbinit</code>).</p>
@@ -151,8 +142,7 @@ with our friendly debugger helpers (available in <code>v8/tools/gdbinit</code>).
 #2  0x00007f2a77e8a2d1 in v8::internal::__RT_impl_Runtime_KeyedLoadIC_Miss (args=...,
     isolate=0xe93d3eb9020) at ../../v8/src/ic/ic.cc:2439
 2439      RETURN_RESULT_OR_FAILURE(isolate, ic.Load(receiver, key));
-(gdb)
-</code></pre><p>In this frame I can look at the input variables. The&nbsp;receiver:</p>
+(gdb)</code></pre><p>In this frame I can look at the input variables. The<span class="widont">&nbsp;</span>receiver:</p>
 <pre><code>(gdb) job *receiver
 0x9cf0a77a209: [JSArray]
  - map = 0x3114690a4121 [FastProperties]
@@ -161,32 +151,29 @@ with our friendly debugger helpers (available in <code>v8/tools/gdbinit</code>).
  - length = 1
  - properties = 0x61c9ec02241 &lt;FixedArray[0]&gt; {
     #length: 0x38b9c858c59 &lt;AccessorInfo&gt; (const accessor descriptor)
- }
-</code></pre><p>Hmm, we have an elements store of length 1. What about our&nbsp;key?</p>
+ }</code></pre><p>Hmm, we have an elements store of length 1. What about our<span class="widont">&nbsp;</span>key?</p>
 <pre><code>(gdb) p key
 $8 = {&lt;v8::internal::HandleBase&gt; = {location_ = 0x7f2a495e8920}, &lt;No data fields&gt;}
 (gdb) job *key
- Smi: 0x1 (1)
-</code></pre><p>Oh. The key is a Smi with the value 1. Sigh. We are looking at the array beyond the end. And a quick
+ Smi: 0x1 (1)</code></pre><p>Oh. The key is a Smi with the value 1. Sigh. We are looking at the array beyond the end. And a quick
 glance at the KeyedLoadIC dispatcher shows that we <span class="caps">MISS</span> to the runtime in this case (this code is in
 <code>AccessorAssembler::HandleLoadICSmiHandlerCase()</code>, I won’t go into it here but it has a telling
 line of code…<code>Label* out_of_bounds = miss;</code> <span class="caps">LOL</span>. This means out of bounds access results in a trip
 to the runtime. So you see, v8 is not optimized to clever code like
 <code>for ( ; (elem = elems[i]) != null; i++ ) {</code>).</p>
-<p>I locally changed the code to look more old-fashioned because I wanted to see the KeyedLoadIC go&nbsp;away.</p>
-<pre><code class="lang-javascript">cleanData: <span class="function"><span class="keyword">function</span><span class="params">( elems, <span class="comment">/* internal */</span> acceptData )</span> {</span>
+<p>I locally changed the code to look more old-fashioned because I wanted to see the KeyedLoadIC go<span class="widont">&nbsp;</span>away.</p>
+<pre><code class="language-javascript">cleanData: <span class="function"><span class="keyword">function</span>(<span class="params"> elems, <span class="regexp">/* internal */</span> acceptData </span>) </span>{
   ...
-  <span class="keyword">var</span> len = elems.length;
+  var len = elems.length;
   <span class="keyword">for</span> ( ; i &lt; len; i++ ) {
     elem = elems[i];
-    ...
-</code></pre>
+    ...</code></pre>
 <p>My change made the keyed load
 run in polymorphic 2-degree state. Why wasn’t this enough to emit optimized loads? Time to debug TurboFan. We have code
 in <code>JSNativeContextSpecialization::ReduceElementAccess()</code> which builds the polymorphic loads
-keying on the receiver map. I stepped into&nbsp;this…</p>
+keying on the receiver map. I stepped into<span class="widont">&nbsp;</span>this…</p>
 <p>A look at the feedback vector made me realize it wouldn’t be so simple. One of the maps we had to
-handle is an indexed&nbsp;interceptor.</p>
+handle is an indexed<span class="widont">&nbsp;</span>interceptor.</p>
 <pre><code>(gdb) jfv *nexus.vector_handle_
 0x5932c9d0ff1: [FeedbackVector]
  - length: 66
@@ -204,11 +191,10 @@ handle is an indexed&nbsp;interceptor.</p>
            0: 0x1ec5780083f9 &lt;WeakCell value= 0x3ba1419a4121 &lt;Map(FAST_ELEMENTS)&gt;&gt;
            1: 72
            2: 0x1ae5bf10de49 &lt;WeakCell value= 0x3ba1419b5b01 &lt;Map(FAST_HOLEY_SMI_ELEMENTS)&gt;&gt;
-           3: 0x29f74c85261 &lt;Code HANDLER&gt;
-</code></pre><p>What this means is that we have a polymorphic keyed load with smi-like keys (the uninitialized
+           3: 0x29f74c85261 &lt;Code HANDLER&gt;</code></pre><p>What this means is that we have a polymorphic keyed load with smi-like keys (the uninitialized
 symbol in <code>[19]</code> tells us this). The fixed array is a mapping of the receiver map to a handler.
 Sometimes the handler is code, sometimes it’s a smi telling us what to do. A look at the code
-shows that it’s the indexed interceptor&nbsp;handler:</p>
+shows that it’s the indexed interceptor<span class="widont">&nbsp;</span>handler:</p>
 <pre><code>(gdb) jco 0x29f74c85261
 0x29f74c85261: [Code]
 kind = HANDLER
@@ -221,26 +207,24 @@ Instructions (size = 92)
 0x29f74c85322    42  b802000000     movl rax,0x2
 0x29f74c85327    47  4889542410     REX.W movq [rsp+0x10],rdx
 0x29f74c8532c    4c  e9cff1dfff     jmp 0x29f74a84500 ;; code: STUB, CEntryStub, minor: 8
-// Call LoadElementWithInterceptor through the CEntryStub.
-</code></pre><p>Back in <code>JSNativeContextSpecialization::ReduceElementAccess()</code>, I see the writing on the wall.
+// Call LoadElementWithInterceptor through the CEntryStub.</code></pre><p>Back in <code>JSNativeContextSpecialization::ReduceElementAccess()</code>, I see the writing on the wall.
 We only do fast handling of polymorphic keyed element loads if all the Maps are simple fast
 element arrays. We call <code>AccessInfoFactory::ComputeElementAccessInfos()</code> which runs a test
-on each Map that succinctly expresses what we consider reasonable to&nbsp;inline:</p>
-<pre><code class="lang-cpp"><span class="keyword">bool</span> CanInlineElementAccess(Handle&lt;Map&gt; <span class="built_in">map</span>) {
-  <span class="keyword">if</span> (!<span class="built_in">map</span>-&gt;IsJSObjectMap()) <span class="keyword">return</span> <span class="keyword">false</span>;
-  <span class="keyword">if</span> (<span class="built_in">map</span>-&gt;is_access_check_needed()) <span class="keyword">return</span> <span class="keyword">false</span>;
-  <span class="keyword">if</span> (<span class="built_in">map</span>-&gt;has_indexed_interceptor()) <span class="keyword">return</span> <span class="keyword">false</span>;  <span class="comment">// Tears of a clown...</span>
+on each Map that succinctly expresses what we consider reasonable to<span class="widont">&nbsp;</span>inline:</p>
+<pre><code class="language-cpp"><span class="function"><span class="keyword">bool</span> <span class="title">CanInlineElementAccess</span><span class="params">(Handle&lt;Map&gt; <span class="built_in">map</span>)</span> </span>{
+  <span class="keyword">if</span> (!<span class="built_in">map</span>-&gt;IsJSObjectMap()) <span class="keyword">return</span> <span class="literal">false</span>;
+  <span class="keyword">if</span> (<span class="built_in">map</span>-&gt;is_access_check_needed()) <span class="keyword">return</span> <span class="literal">false</span>;
+  <span class="keyword">if</span> (<span class="built_in">map</span>-&gt;has_indexed_interceptor()) <span class="keyword">return</span> <span class="literal">false</span>;  <span class="comment">// Tears of a clown...</span>
   ElementsKind <span class="keyword">const</span> elements_kind = <span class="built_in">map</span>-&gt;elements_kind();
-  <span class="keyword">if</span> (IsFastElementsKind(elements_kind)) <span class="keyword">return</span> <span class="keyword">true</span>;
-  <span class="keyword">if</span> (IsFixedTypedArrayElementsKind(elements_kind)) <span class="keyword">return</span> <span class="keyword">true</span>;
-  <span class="keyword">return</span> <span class="keyword">false</span>;
-}
-</code></pre>
+  <span class="keyword">if</span> (IsFastElementsKind(elements_kind)) <span class="keyword">return</span> <span class="literal">true</span>;
+  <span class="keyword">if</span> (IsFixedTypedArrayElementsKind(elements_kind)) <span class="keyword">return</span> <span class="literal">true</span>;
+  <span class="keyword">return</span> <span class="literal">false</span>;
+}</code></pre>
 <p>So I know that the <code>elem = elems[i]</code> code is generic for two reasons: out of bounds access and the use of
 an indexed interceptor on one of the maps. I waddled over to <a href="https://twitter.com/tverwaes">Toon’s</a> desk (they feed us a lot here,
 jus’ sayin), and asked him about the possibility of optimizing indexed interceptor access. He pointed out that
 even if we were able to avoid going through the <span class="caps">IC</span> handler that makes the runtime call, we are still
-on our way into C++ on the Blink side. For now then, I’ll quit trying to optimize this place in the&nbsp;code.</p>
+on our way into C++ on the Blink side. For now then, I’ll quit trying to optimize this place in the<span class="widont">&nbsp;</span>code.</p>
 <h2 id="moving-on-to-id-elem-internalkey-">Moving on to <code>id = elem[ internalKey ]</code></h2>
 <p><code>internalKey</code> is a string like “jQuery1910…”. The receiver is a <code>JS_API_OBJECT_TYPE</code>.</p>
 <pre><code>(gdb) job *object
@@ -253,25 +237,23 @@ on our way into C++ on the Blink side. For now then, I’ll quit trying to optim
  - embedder fields = {
     0x7fe301dfb650
     0x1046fdd4ef80
- }
-</code></pre><p>A comment in <code>objects.h</code> sez “Like JS_OBJECT_TYPE but created from Api functions.”&nbsp;Cool.</p>
+ }</code></pre><p>A comment in <code>objects.h</code> sez “Like JS_OBJECT_TYPE but created from Api functions.”<span class="widont">&nbsp;</span>Cool.</p>
 <p>Anyway, in the <span class="caps">IC</span> system we don’t find the property on the object, so we prepare for a non-existent
 load. We create a <code>Tuple3</code> which is a struct with three values: a holder cell, a smi-handler and a validity cell.
 This information makes it possible to handle the load as efficiently as possible while safeguarding against
-structural changes that invalidate the&nbsp;approach.</p>
+structural changes that invalidate the<span class="widont">&nbsp;</span>approach.</p>
 <p>The smi-handler value is 0x7, which means it’s a handler meant to “load” non-existent properties. Generally,
-this means returning undefined to the caller. The validity cell protects against this ever&nbsp;changing.</p>
+this means returning undefined to the caller. The validity cell protects against this ever<span class="widont">&nbsp;</span>changing.</p>
 <p>How did I find all this out? By poking around in the feedback vector. I did this poking around after the
 first miss, so the <span class="caps">IC</span> is in monomorphic state at this point. It’s only later we’ll go megamorphic.
-Here is the feedback vector slot for our keyed&nbsp;load:</p>
+Here is the feedback vector slot for our keyed<span class="widont">&nbsp;</span>load:</p>
 <pre><code>(gdb) jfv nexus_-&gt;vector()
 0x671f59d0e21: [FeedbackVector]
  - length: 64
 ....
  Slot #20 LoadKeyed MONOMORPHIC
    [22]: 0x231997de8b99 &lt;String[27]: jQuery191044337671379997645&gt;
-   [23]: 0x2a9781fd401 &lt;FixedArray[2]&gt;
-</code></pre><p>and here is the data with the <code>Tuple3</code> structure, as pulled out of the FixedArray in <code>[23]</code> above:</p>
+   [23]: 0x2a9781fd401 &lt;FixedArray[2]&gt;</code></pre><p>and here is the data with the <code>Tuple3</code> structure, as pulled out of the FixedArray in <code>[23]</code> above:</p>
 <pre><code>(gdb) job 0x2a9781fd401
 0x2a9781fd401: [FixedArray]
  - map = 0x1a6253c82309 &lt;Map(FAST_HOLEY_ELEMENTS)&gt;
@@ -282,44 +264,26 @@ Here is the feedback vector slot for our keyed&nbsp;load:</p>
 0x671f59d63e1: [Tuple3]
  - value1: 0x3e7913e02201 &lt;null&gt;
  - value2: 7
- - value3: 0x231997de25d1 &lt;Cell value= 0&gt;
-</code></pre><p>So this load is quite complicated already, and soon goes Megamorphic because we come in with different receiver&nbsp;maps.</p>
-<h2 id="anything-else-to-do-">Anything else to&nbsp;do?</h2>
+ - value3: 0x231997de25d1 &lt;Cell value= 0&gt;</code></pre><p>So this load is quite complicated already, and soon goes Megamorphic because we come in with different receiver<span class="widont">&nbsp;</span>maps.</p>
+<h2 id="anything-else-to-do-">Anything else to<span class="widont">&nbsp;</span>do?</h2>
 <p>The last keyed load I’m interested in is for the line <code>data = id &amp;&amp; cache[ id ]</code>. <code>cache</code> is the JQuery cache
 object, just an ordinary object with some 150 holey array elements. This keyed load is monomorphic and uses a simple
 element handler. Turbofan should definitely optimize this. In the vector we store the map of the JQuery
 cache, and have a smi value to represent what we should do. It encodes whether or not the object is a JSArray
 (it is not), and what the ElementsKind is (<code>FAST_HOLEY_ELEMENTS</code>).</p>
-<p>Happily, this load has been optimized in&nbsp;TurboFan.</p>
+<p>Happily, this load has been optimized in<span class="widont">&nbsp;</span>TurboFan.</p>
 <p>Unhappily for me, I don’t have an A-<span class="caps">HA</span>! discovery in this block to crow over. Performance investigations
-sometimes are like&nbsp;that.</p>
+sometimes are like<span class="widont">&nbsp;</span>that.</p>
 <p>As for the <code>Builtin_HandleApiCall</code> issue in unoptimized JavaScript function <code>curCSS</code> in the output from Jaro’s
 tool, <a href="https://twitter.com/bmeurer">Benedikt</a> did some follow-up there, recognizing cases where we could use a stub
-to make the api call less expensive. A story for another&nbsp;day…</p>
+to make the api call less expensive. A story for another<span class="widont">&nbsp;</span>day…</p>
 </section>
         </article>
       </div>
     </div>
     <footer>
       <div class="content-wrap">
-        <div class="nav"><a href="/">« Full blog</a></div>
-                <div id="disqus_thread"></div>
-                <script>
-                  /* * * CONFIGURATION VARIABLES: EDIT BEFORE PASTING INTO YOUR WEBPAGE * * */
-                  var disqus_shortname = 'ripsawridge-techblog'; // required: replace example with your forum shortname
-                  
-                  /* * * DON'T EDIT BELOW THIS LINE * * */
-                  (function() {
-                      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-                      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-                      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-                  })();
-                  
-                </script>
-                <noscript>
-                  Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-                  <a href="http://disqus.com" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-                </noscript>
+        <div class="nav"><a href="/">&laquo; Full blog</a></div>
         <section class="about"><p>The views expressed here are simply my own and not my employers or anything
 wierd.</p>
 <p>Also, I am often mistaken and in the process of bumbling about in order
@@ -328,8 +292,7 @@ to learn things.</p>
 
         </section>
         <section class="copy">
-          <p>&copy; 2017 Michael Stanton &mdash; powered by&nbsp;<a href="https://github.com/jnordberg/wintersmith">Wintersmith</a>
-          </p>
+          <p>&copy; 2019 Michael Stanton &mdash; powered by&nbsp;<a href="https://github.com/jnordberg/wintersmith">Wintersmith</a></p>
         </section>
       </div>
     </footer>
